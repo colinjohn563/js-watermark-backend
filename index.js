@@ -10,6 +10,18 @@ const upload = multer({ dest: 'temp_videos/' });
 app.use(cors()); // Enable CORS for all routes
 app.use(express.static('watermarked_videos'));
 
+
+// Middleware to handle request timeout
+const requestTimeout = 360000; // 6 minutes in milliseconds
+app.use((req, res, next) => {
+  req.setTimeout(requestTimeout, () => {
+    const error = new Error('Request Timeout');
+    error.status = 408; // Request Timeout
+    next(error);
+  });
+  next();
+});
+
 app.post('/add_watermark', upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file provided');
