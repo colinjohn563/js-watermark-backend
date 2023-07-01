@@ -6,6 +6,7 @@ const fs = require('fs');
 const cors = require('cors');
 const app = express();
 const upload = multer({ dest: 'temp_videos/' });
+const port = 3000;
 
 app.use(cors()); // Enable CORS for all routes
 app.use(express.static('watermarked_videos'));
@@ -124,8 +125,8 @@ app.post('/add_watermark', upload.single('file'), (req, res) => {
     });
 });
 
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
+app.listen(port, () => {
+  console.log(`API listening at http://localhost:${port}`);
 });
 
 
