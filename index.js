@@ -6,18 +6,18 @@ const fs = require('fs');
 const cors = require('cors');
 const app = express();
 const upload = multer({ dest: 'temp_videos/' });
+const watermarkUpload = multer({ dest: 'temp_watermarks/' });
 const port = 3000;
 
-app.use(cors()); // Enable CORS for all routes
+app.use(cors());
 app.use(express.static('watermarked_videos'));
 
+const requestTimeout = 360000;
 
-// Middleware to handle request timeout
-const requestTimeout = 360000; // 6 minutes in milliseconds
 app.use((req, res, next) => {
   req.setTimeout(requestTimeout, () => {
     const error = new Error('Request Timeout');
-    error.status = 408; // Request Timeout
+    error.status = 408;
     next(error);
   });
   next();
@@ -33,14 +33,12 @@ app.post('/add_watermark', upload.single('file'), (req, res) => {
     const watermarkScaledPath = 'watermark_scaled.png';
     const watermarkedFilePath = `watermarked_videos/${req.file.originalname.replace(/\.[^/.]+$/, '')}_watermarked.mp4`;
 
-    // Delete the old watermarked video if it exists
     fs.unlink(watermarkedFilePath, (err) => {
         if (err && err.code !== 'ENOENT') {
             console.error('Error deleting old watermarked video:', err);
         }
 
-        // Scale the watermark image to 50% of the video height
-        const ffprobePath = 'ffprobe'; // Path to the ffprobe executable
+        const ffprobePath = 'ffprobe';
         const ffprobeProcess = spawn(ffprobePath, [
             '-v',
             'error',
@@ -56,9 +54,9 @@ app.post('/add_watermark', upload.single('file'), (req, res) => {
         ffprobeProcess.stdout.on('data', (data) => {
             const videoHeight = parseInt(data.toString().trim());
 
-            const watermarkScale = Math.floor(videoHeight * 0.1); // Adjust the scale factor as desired
+            const watermarkScale = Math.floor(videoHeight * 0.1);
 
-            const ffmpegPath = 'ffmpeg'; // Path to the ffmpeg executable
+            const ffmpegPath = 'ffmpeg';
             const ffmpegScaleProcess = spawn(ffmpegPath, [
                 '-i', watermarkImagePath,
                 '-vf', `scale=-1:${watermarkScale}`,
@@ -67,7 +65,6 @@ app.post('/add_watermark', upload.single('file'), (req, res) => {
 
             ffmpegScaleProcess.on('exit', (code) => {
                 if (code === 0) {
-                    // Continue with the watermarking process
                     const ffmpegProcess = spawn(ffmpegPath, [
                         '-i', uploadedFilePath,
                         '-i', watermarkScaledPath,
@@ -83,14 +80,12 @@ app.post('/add_watermark', upload.single('file'), (req, res) => {
                                     console.error('Error sending watermarked video:', err);
                                 }
 
-                                // Delete the uploaded file
                                 fs.unlink(uploadedFilePath, (err) => {
                                     if (err) {
                                         console.error('Error deleting uploaded file:', err);
                                     }
                                 });
 
-                                // Delete the old watermarked video if it exists
                                 fs.unlink(watermarkedFilePath, (err) => {
                                     if (err && err.code !== 'ENOENT') {
                                         console.error('Error deleting old watermarked video:', err);
@@ -102,7 +97,6 @@ app.post('/add_watermark', upload.single('file'), (req, res) => {
                             res.status(500).send('Failed to add watermark to video. Please try again.');
                         }
 
-                        // Delete the scaled watermark image
                         fs.unlink(watermarkScaledPath, (err) => {
                             if (err) {
                                 console.error('Error deleting scaled watermark image:', err);
@@ -125,9 +119,13 @@ app.post('/add_watermark', upload.single('file'), (req, res) => {
     });
 });
 
-app.post('/add_watermark_crewdog', upload.single('file'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).send('No file provided');
+app.post('/add_watermark_crewdog', upload.single('file'), watermarkUpload.single('watermark'), (req, res) => {
+    if (!req.file || !req.file.path || !req.file.originalname || !req.file.mimetype) {
+        return res.status(400).send('No video file provided');
+    }
+
+    if (!req.file || !req.file.path || !req.file.originalname || !req.file.mimetype) {
+        return res.status(400).send('No watermark image file provided');
     }
 
     const uploadedFilePath = req.file.path;
@@ -135,14 +133,12 @@ app.post('/add_watermark_crewdog', upload.single('file'), (req, res) => {
     const watermarkScaledPath = 'watermark_scaled.png';
     const watermarkedFilePath = `watermarked_videos/${req.file.originalname.replace(/\.[^/.]+$/, '')}_watermarked.mp4`;
 
-    // Delete the old watermarked video if it exists
     fs.unlink(watermarkedFilePath, (err) => {
         if (err && err.code !== 'ENOENT') {
             console.error('Error deleting old watermarked video:', err);
         }
 
-        // Scale the watermark image to 50% of the video height
-        const ffprobePath = 'ffprobe'; // Path to the ffprobe executable
+        const ffprobePath = 'ffprobe';
         const ffprobeProcess = spawn(ffprobePath, [
             '-v',
             'error',
@@ -158,9 +154,9 @@ app.post('/add_watermark_crewdog', upload.single('file'), (req, res) => {
         ffprobeProcess.stdout.on('data', (data) => {
             const videoHeight = parseInt(data.toString().trim());
 
-            const watermarkScale = Math.floor(videoHeight * 0.1); // Adjust the scale factor as desired
+            const watermarkScale = Math.floor(videoHeight * 0.1);
 
-            const ffmpegPath = 'ffmpeg'; // Path to the ffmpeg executable
+            const ffmpegPath = 'ffmpeg';
             const ffmpegScaleProcess = spawn(ffmpegPath, [
                 '-i', watermarkImagePath,
                 '-vf', `scale=-1:${watermarkScale}`,
@@ -169,7 +165,6 @@ app.post('/add_watermark_crewdog', upload.single('file'), (req, res) => {
 
             ffmpegScaleProcess.on('exit', (code) => {
                 if (code === 0) {
-                    // Continue with the watermarking process
                     const ffmpegProcess = spawn(ffmpegPath, [
                         '-i', uploadedFilePath,
                         '-i', watermarkScaledPath,
@@ -185,14 +180,12 @@ app.post('/add_watermark_crewdog', upload.single('file'), (req, res) => {
                                     console.error('Error sending watermarked video:', err);
                                 }
 
-                                // Delete the uploaded file
                                 fs.unlink(uploadedFilePath, (err) => {
                                     if (err) {
                                         console.error('Error deleting uploaded file:', err);
                                     }
                                 });
 
-                                // Delete the old watermarked video if it exists
                                 fs.unlink(watermarkedFilePath, (err) => {
                                     if (err && err.code !== 'ENOENT') {
                                         console.error('Error deleting old watermarked video:', err);
@@ -204,7 +197,6 @@ app.post('/add_watermark_crewdog', upload.single('file'), (req, res) => {
                             res.status(500).send('Failed to add watermark to video. Please try again.');
                         }
 
-                        // Delete the scaled watermark image
                         fs.unlink(watermarkScaledPath, (err) => {
                             if (err) {
                                 console.error('Error deleting scaled watermark image:', err);
@@ -230,5 +222,3 @@ app.post('/add_watermark_crewdog', upload.single('file'), (req, res) => {
 app.listen(port, () => {
   console.log(`API listening at http://localhost:${port}`);
 });
-
-
