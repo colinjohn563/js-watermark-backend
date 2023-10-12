@@ -131,7 +131,7 @@ app.post('/add_watermark_crewdog', upload.single('file'), (req, res) => {
     }
 
     const uploadedFilePath = req.file.path;
-    const watermarkImagePath = 'watermark.png';
+    const watermarkImagePath = 'crewdog-watermark.png';
     const watermarkScaledPath = 'watermark_scaled.png';
     const watermarkedFilePath = `watermarked_videos/${req.file.originalname.replace(/\.[^/.]+$/, '')}_watermarked.mp4`;
 
